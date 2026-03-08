@@ -1,0 +1,56 @@
+(* Types *)
+type id.
+type hbid.
+type choice1.
+type time1.
+type booth.
+type fval.
+type count.
+
+(* Functions *)
+fun H(id, bitstring): hbid.
+fun F(hbid, choice1): fval.
+
+(* Events: ground truth *)
+event voter_receipt(hbid, choice1, time1, count, booth).
+event cast_final(hbid, choice1, time1, count, booth).
+event sealing_receipt(hbid, fval, time1, count, booth).
+event pbb_entry(booth, time1, choice1, count).
+
+(* Events: what the court sees *)
+event ea_receipt(hbid, fval, time1, count, booth).
+event judge_accepts(hbid, choice1, time1, count, booth).
+
+(* Queries *)
+(* Soundness: judge_accepts implies a unique cast_final *)
+query h: hbid, v: choice1, t: time1, b: booth, n:count;
+      inj-event(judge_accepts(h, v, t, n, b)) ==> inj-event(cast_final(h, v, t, n, b)).
+
+(* EA cannot fabricate a receipt without a cast_final *)
+query h: hbid, fv:fval, v: choice1, t: time1, b: booth, n:count;
+      inj-event(ea_receipt(h, fv, t, n, b)) ==> inj-event(cast_final(h, v, t, n, b)).
+
+(* Main process: one honest run *)
+process
+  new ID : id;
+  new r  : bitstring;
+  let HB = H(ID, r) in
+  new T  : time1;
+  new B  : booth;
+  new C  : choice1;
+  new N : count;
+  let FV = F(HB, C) in
+
+  (* Ground truth and evidence events *)
+  
+  event cast_final(HB, C, T, N, B);
+  event voter_receipt(HB, C, T, N, B);
+  event sealing_receipt(HB, FV, T, N, B);
+  event ea_receipt(HB, FV, T, N, B);
+  (* Judge/EA decide to accept this triple *)
+  event judge_accepts(HB, C, T, N, B);
+  event pbb_entry(B, T, C, N);
+  0
+
+
+

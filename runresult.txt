@@ -1,0 +1,61 @@
+Process 0 (that is, the initial process):
+{1}new ID: id;
+{2}new r: bitstring;
+{3}let HB: hbid = H(ID,r) in
+{4}new T: time1;
+{5}new B: booth;
+{6}new C: choice1;
+{7}new N: count;
+{8}let FV: fval = F(HB,C) in
+{9}event cast_final(HB,C,T,N,B);
+{10}event voter_receipt(HB,C,T,N,B);
+{11}out(net, (HB,C,T,N,B));
+{12}event sealing_receipt(HB,FV,T,N,B);
+{13}event ea_receipt(HB,FV,T,N,B);
+{14}out(net, (HB,C,T,N,B));
+{15}event pbb_entry(B,T,C,N);
+{16}out(net, (B,T,C,N));
+{17}event judge_accepts(HB,C,T,N,B)
+
+--  Process 1 (that is, process 0, with let moved downwards):
+{1}new ID: id;
+{2}new r: bitstring;
+{4}new T: time1;
+{5}new B: booth;
+{6}new C: choice1;
+{7}new N: count;
+{3}let HB: hbid = H(ID,r) in
+{9}event cast_final(HB,C,T,N,B);
+{10}event voter_receipt(HB,C,T,N,B);
+{11}out(net, (HB,C,T,N,B));
+{8}let FV: fval = F(HB,C) in
+{12}event sealing_receipt(HB,FV,T,N,B);
+{13}event ea_receipt(HB,FV,T,N,B);
+{14}out(net, (HB,C,T,N,B));
+{15}event pbb_entry(B,T,C,N);
+{16}out(net, (B,T,C,N));
+{17}event judge_accepts(HB,C,T,N,B)
+
+-- Query inj-event(judge_accepts(h,v,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query inj-event(judge_accepts(h,v,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b))
+goal reachable: b-inj-event(cast_final(H(ID[],r[]),C[],T[],N[],B[]),@occ9[]) -> inj-event(judge_accepts(H(ID[],r[]),C[],T[],N[],B[]),@occ17[])
+The hypothesis occurs strictly before the conclusion.
+RESULT inj-event(judge_accepts(h,v,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) is true.
+-- Query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b))
+goal reachable: b-inj-event(cast_final(H(ID[],r[]),C[],T[],N[],B[]),@occ9_1[]) -> inj-event(ea_receipt(H(ID[],r[]),F(H(ID[],r[]),C[]),T[],N[],B[]),@occ13[])
+The hypothesis occurs strictly before the conclusion.
+RESULT inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) is true.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query inj-event(judge_accepts(h,v,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) is true.
+
+Query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) is true.
+
+--------------------------------------------------------------
