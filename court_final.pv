@@ -12,7 +12,7 @@ fun H(id, bitstring): hbid.
 fun F(hbid, choice1): fval.
 
 (* Events: ground truth *)
-event voter_receipt(hbid, choice1, time1, count, booth).
+event voter_receipts2(hbid, choice1, time1, count, booth).
 event cast_final(hbid, choice1, time1, count, booth).
 event sealing_receipt(hbid, fval, time1, count, booth).
 event pbb_entry(booth, time1, choice1, count).
@@ -26,9 +26,13 @@ event judge_accepts(hbid, choice1, time1, count, booth).
 query h: hbid, v: choice1, t: time1, b: booth, n:count;
       inj-event(judge_accepts(h, v, t, n, b)) ==> inj-event(cast_final(h, v, t, n, b)).
 
-(* EA cannot fabricate a receipt without a cast_final *)
+(* trust assumption: EA cannot fabricate a receipt without a cast_final *)
 query h: hbid, fv:fval, v: choice1, t: time1, b: booth, n:count;
       inj-event(ea_receipt(h, fv, t, n, b)) ==> inj-event(cast_final(h, v, t, n, b)).
+
+(* judge_accepts implies also that PBB matches both receipts *)
+query h: hbid, v: choice1, t: time1, b: booth, n:count;
+      inj-event(judge_accepts(h, v, t, n, b)) ==> inj-event(pbb_entry(b, t, v, n)).
 
 (*exposing receipts to attackers*)
 free net : channel.
@@ -44,8 +48,8 @@ process
   let FV = F(HB, C) in
 
   event cast_final(HB, C, T, N, B);
-  event voter_receipt(HB, C, T, N, B);
-  out(net, (HB, C, T, N, B));          (* voter shows receipt on a public channel *)
+  event voter_receipts2(HB, C, T, N, B);
+  out(net, (HB, C, T, N, B));          (* voter shows receipt on a public channel meaning to the court here*)
 
   event sealing_receipt(HB, FV, T, N, B);
   event ea_receipt(HB, FV, T, N, B);
