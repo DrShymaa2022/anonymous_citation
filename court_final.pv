@@ -10,42 +10,64 @@ type count.
 (* Functions *)
 fun H(id, bitstring): hbid.
 fun F(hbid, choice1): fval.
+fun initiate(): count.   (*making counter equals 1 with the start of each vote*)
 fun increment(count): count.
 
-event initiate(count).   (*making counter equals zero with the start of each vote*)
-
 (* Events: ground truth *)
+event voter_receipt1(id, hbid, time1, booth).
 event voter_receipts2(hbid, choice1, time1, count, booth).
-event cast_final(hbid, choice1, time1, count, booth).
 event sealing_receipt(hbid, fval, time1, count, booth).
 event pbb_entry(booth, time1, choice1, count).
 
+(*Event auditor checks for a sample of receipts and/or ZKPs on summary reports*)
+event auditor_accepts(hbid,booth,choice1).
+
+(*Event voter submits an old receipt2 to vote coercer/buyer*)
+event coercer_deceived(hbid, choice1, time1, count, booth).
+
 (* Events: what the court sees *)
+event cast_final(hbid, choice1, time1, count, booth).
 event ea_receipt(hbid, fval, time1, count, booth).
-event judge_accepts(hbid, choice1, time1, count, booth).
-event judge_rejects(hbid, choice1, time1, count, booth).
+event judge_accepts(hbid, choice1, booth).
+event judge_rejects_voterclaim(hbid, choice1, booth).
+event judge_falsfies_election(hbid, choice1, choice1, booth).
+
 
 (* Queries *)
+
+(*auditor phase*)
+query h: hbid, v: choice1, fv:fval, t11,t22:time1, t1,t2: time, b: booth, n_voter, n_pollworker:count, voter:id;
+      inj-event(auditor_accepts(h,b,v)) ==> (inj-event (voter_receipt1(voter, h, t11, b))@t1) && (inj-event (cast_final(h, v, t22, n_voter, b))@t2) && (t1 <t2) && inj-event(sealing_receipt(h, fv, t22, n_pollworker, b)) && (fv=F(h,v)) && (n_voter = n_pollworker).
+
+(*coercer deceived*)
+query h: hbid, v,v_final: choice1, t11,t22:time1, t1,t2: time, b: booth, n, n_final:count;
+inj-event(coercer_deceived(h, v, t11, n, b)) ==> (inj-event (voter_receipts2(h, v, t11, n, b))@t1) && (inj-event (cast_final(h, v_final, t22, n_final, b))@t2) && (t1 <t2) && (n <> n_final).
+
 (* Soundness: judge_accepts implies consistent values *)
 query h: hbid, v: choice1, fv:fval, t: time1, b: booth, n:count;
-      inj-event(judge_accepts(h, v, t, n, b)) ==> ((inj-event (cast_final(h, v, t, n, b)) && (inj-event(ea_receipt(h, fv, t, n, b))) && (fv=F(h,v)))).
+      inj-event(judge_accepts(h, v, b)) ==> ((inj-event (cast_final(h, v, t, n, b)) && (inj-event(ea_receipt(h, fv, t, n, b))) && (fv=F(h,v)))).
 (* judge_accepts implies also that PBB matches both receipts *)
 query h: hbid, v,v_voter: choice1, t,t_voter: time1, b: booth, n:count;
-      inj-event(judge_accepts(h, v, t, n, b)) ==> inj-event(pbb_entry(b, t, v, n)) && inj-event (cast_final(h, v_voter, t_voter, n, b))&& (v = v_voter)&& (t = t_voter).
-(* judge_rejectss implies a mismatch *)
-query h: hbid, v,v_PBB,v_voter: choice1, t,t_voter,t_PBB: time1, b: booth, n:count;
-      inj-event(judge_rejects(h, v, t, n, b)) ==> inj-event(pbb_entry(b, t_PBB, v_PBB, n)) && inj-event (cast_final(h, v_voter, t_voter, n, b)) && (v_PBB <> v_voter) || (t_PBB <> t_voter).
+      inj-event(judge_accepts(h, v, b)) ==> inj-event(pbb_entry(b, t, v, n)) && inj-event (cast_final(h, v_voter, t_voter, n, b))&& (v = v_voter)&& (t = t_voter).
+
+(* judge_rejects voter claim if the voter submitted an older receipt to deceive the court *)
+query h: hbid, v,v_voter: choice1, fv:fval, t,t_voter: time1, b: booth, n,n_voter:count;
+      inj-event(judge_rejects_voterclaim(h, v_voter, b)) ==> inj-event(pbb_entry(b, t, v, n)) && inj-event(ea_receipt(h, fv, t, n, b)) && inj-event(voter_receipts2(h, v_voter, t_voter, n_voter, b)) && (fv=F(h,v)) && (v <> v_voter) && ((n <> n_voter)||(t <> t_voter)) && inj-event(auditor_accepts(h,b,v)).
+
+(*judge falsifies election at this booth and session(between 2 checkpoints) if voter showed a newer recepit that is not counted*)
+query h: hbid, v_PBB,v_voter: choice1, fv:fval, t_PBB,t_voter,t_EA: time1, b: booth, n_PBB,n_voter,n_EA:count;
+      inj-event(judge_falsfies_election(h, v_PBB, v_voter, b)) ==> inj-event(cast_final(h,v_voter, t_voter, n_voter, b)) && inj-event(ea_receipt(h, fv, t_EA, n_EA, b))&& (fv=F(h,v_voter)) && (n_EA=n_voter) && (t_EA = t_voter) && (v_PBB <> v_voter).   
 
 
 (* completness: judge_accepts only consistent values *)
 query h: hbid, v,v_voter: choice1, fv:fval, t, t_voter, t_EA: time1, b: booth, n:count;
-     inj-event(judge_accepts(h, v, t, n, b)) && inj-event(voter_receipts2(h, v_voter, t_voter, n, b)) && inj-event(ea_receipt(h, fv, t_EA, n, b)) ==> ((v=v_voter) && (fv=F(h,v_voter)) && (t = t_voter) && (t_voter = t_EA)).
+     inj-event(judge_accepts(h, v, b)) && inj-event(cast_final(h, v_voter, t_voter, n, b)) && inj-event(ea_receipt(h, fv, t_EA, n, b)) ==> ((v=v_voter) && (fv=F(h,v_voter)) && (t = t_voter) && (t_voter = t_EA)).
 query h: hbid, v,v_voter,v_PBB: choice1,  t, t_voter, t_PBB: time1, b: booth, n:count;
-     inj-event(judge_accepts(h, v, t, n, b)) && inj-event(voter_receipts2(h, v_voter, t_voter, n, b)) && inj-event(pbb_entry(b, t_PBB, v_PBB, n)) ==> ((v=v_voter) && (v_PBB=v) && (t = t_voter) && (t_voter = t_PBB)).
+     inj-event(judge_accepts(h, v, b)) && inj-event(cast_final(h, v_voter, t_voter, n, b)) && inj-event(pbb_entry(b, t_PBB, v_PBB, n)) ==> ((v=v_voter) && (v_PBB=v) && (t = t_voter) && (t_voter = t_PBB)).
 
 (* trust assumption: EA cannot fabricate a receipt without a cast_final *)
 query h: hbid, fv:fval, v: choice1, t: time1, b: booth, n:count;
-      inj-event(ea_receipt(h, fv, t, n, b)) ==> inj-event(cast_final(h, v, t, n, b)).
+      inj-event(ea_receipt(h, fv, t, n, b)) ==> inj-event(cast_final(h, v, t, n, b)) && inj-event(sealing_receipt(h, fv, t, n, b)) && (fv=F(h,v)).
 
 
 (*exposing receipts to attackers*)
@@ -54,53 +76,69 @@ free net : channel.
 process
   new ID : id;
   new r  : bitstring;
-  let HB = H(ID, r) in
-  new T  : time1;
+  new T1 : time1;   (*time of receipt1*)
+  new T2  : time1;   (*time of receipt2*)
   new B  : booth;
   new C  : choice1;
   new N  : count;
-
-  event initiate(N);                (*assume equivalent to make it zero*)
-  new T_final  : time1;
+  new T2_final  : time1;
   new C_final  : choice1;
   new N_final  : count;
 
-  (* 1. The Intermediate Voting Phase (0 or more times) *)
-  (* The voter can generate many receipts to show coercers *)
+  (* 1. The entrance Phase : generating HBID and printing receipt1 from Device1 *)
+  let HB = H(ID, r) in
+  event voter_receipt1(ID,HB,T1,B);
+
+  (* 2. The Intermediate Voting Phase on Device2: should be 1 or more times,but let's assume the existence of at least 2 pairs to test all checks *)
+  (* The voter can generate many receipt2s to show coercers *)
+ 
+  let N = initiate() in                (*assume equivalent to make it 1*)
+  event voter_receipts2(HB, C, T2, N, B);  (* keeping the old values as the values that will be in the voter_receipts2 copy shown to coercers*)
   
+  let N_final = increment(N) in                 (*counter*)
+  event voter_receipts2(HB, C_final, T2_final, N_final, B);
+
   !(
-    let N = increment(N) in                 (*counter*)
-    event voter_receipts2(HB, C, T, N, B);
-    
-    let T_final = T in
-    let C_final = C in
-    let N_final = N in
-    
+    let C = C_final in    (* keeping the old values as the values that will be in the voter_receipts2 copy shown to coercers*)
+    let T2 = T2_final in
+    let N = N_final in    
+
+    let N_final = increment(N_final) in                 (*counter*)
+    event voter_receipts2(HB, C_final, T2_final, N_final, B);
+        
     (* This '!' means repitition and stops here, but the process 
        proceeds when the voter is done revoting to the sealing receipt where the values of T and C and N are now final*)
     0
   ) | (
     
-    (* 2. The Sealing/Final Phase (Happens exactly once) *)
+    (* 3. The Sealing/Final Phase (Happens exactly once) *)
     
-    event cast_final(HB, C_final, T_final, N_final, B); (* since we are out of the loop this is the final receipt *)
+    event cast_final(HB, C_final, T2_final, N_final, B); (* since we are out of the loop this is the final receipt *)
+    
     let FV = F(HB, C_final) in
     (* The Sealing Receipt (only for poll workers/EA) *)
-    event sealing_receipt(HB, FV, T_final, N_final, B);
-    event ea_receipt(HB, FV, T_final, N_final, B);
+    event sealing_receipt(HB, FV, T2_final, N_final, B);
+
+
     
-    (* EA's sealing receipt is kept in a box (net can see it eventually) *)
-    out(net, (HB, FV, T_final, N_final, B)); 
+    new C_from_set : choice1;  (* Those should be a tuple from the repition array*)
+    out(net, (HB, C, T2, N, B)); (* voter shows a receipt on a public channel to court*)
+    event coercer_deceived(HB, C, T2, N, B);
+    
+ event auditor_accepts(HB, B, C_final);      (*should happen at checkpoints before signing summary reports*)
+ 
 
-    event pbb_entry(B, T_final, C_final, N_final);
-    out(net, (B, T_final, C_final, N_final));            (* PBB is public by design *)
+ event pbb_entry(B, T2_final, C_final, N_final);
+  out(net, (B, T2_final, C_final, N_final));            (* PBB is public by design *)
 
-  new T_from_set : time1;
-  new C_from_set : choice1;
-  new N_from_set : count; (* Those should be a tuple from the repition array*)
+ event ea_receipt(HB, FV, T2_final, N_final, B);   (*when a voter goes to court, the EA disposes his/her sealing recepit*)
+ (* EA's sealing receipt is kept in a box (net can see it eventually) *)
+   out(net, (HB, FV, T2_final, N_final, B)); 
 
-  out(net, (HB, C_from_set, T_from_set, N_from_set, B)); (* voter shows a receipt on a public channel to court*)
-  event judge_accepts(HB, C_final, T_final, N_final, B);
-  event judge_rejects(HB, C_final, T_final, N_final, B);
+ event judge_accepts(HB, C_final, B);      (*judge accepts election integrity if consistent*)
+ 
+ (*judge accepts voter claim of false election, this will only be for the designated booth between the 2 checkpoints the voter timing indicates*)
+ event judge_rejects_voterclaim(HB, C, B);  (*judge rejects voter claim if used the coercers trick and submitted an older receipt2*)
+ event judge_falsfies_election(HB, C_from_set, C_final, B);  
   0
 )
