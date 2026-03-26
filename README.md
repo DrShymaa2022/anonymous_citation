@@ -7,13 +7,15 @@ This folder contains files needed for Africa Crypt 2026 Submitted manuscripts (b
 3- the last version of the automated formal verification (using PRoVerif2.05) of the court verifiability e-voting paper:
 The paper states that this part is still WIP, so:
 
-              (court.pv) contains the version at submission time, 
-              (court_final.pv) contains the most updated version
-              (runresult.txt) contains the details of the last run (of the updated version)
+(**court.pv**) contains the version at submission time, 
+
+(**court_final.pv**) contains the most updated version
+            
+(**runresult.txt**) contains the details of the last run (of the updated version)
 
 On 25/3/2026:
 
-The code successfuly checks the predicates (all true)
+The code successfuly checks the predicates measuring the following: (all true)
 
     Judge_accepts
     Judge_rejects_voterclaim
