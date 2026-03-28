@@ -6,21 +6,33 @@ type time1.
 type booth.
 type fval.
 type count.
+type ZKproof.
 
 (* Functions *)
 fun H(id, bitstring): hbid.
 fun F(hbid, choice1): fval.
 fun initiate(): count.   (*making counter equals 1 with the start of each vote*)
 fun increment(count): count.
+fun check_ZKP3_vote(ZKproof, hbid, booth): choice1.
+fun check_ZKP3_time(ZKproof, hbid, booth): time1.
+fun check_ZKP3_count(ZKproof, hbid, booth): count.
+
+
 
 (* Events: ground truth *)
 event voter_receipt1(id, hbid, time1, booth).
 event voter_receipts2(hbid, choice1, time1, count, booth).
 event sealing_receipt(hbid, fval, time1, count, booth).
 event pbb_entry(booth, time1, choice1, count).
+event add_id_toZKP(ZKproof, id, hbid, time1, booth, bool).
+event add_vote_toZKP(ZKproof, hbid, choice1, time1, count, booth).
+
+
+(*adding votes to a chosen ZKP that is supposed to provide non-inclusion proofs, could be Verkle or Merkle Tree or STARK or any thing else*)
+fun check_ZKP_inclusion(ZKproof, id, booth, bool): hbid.
 
 (*Event auditor checks for a sample of receipts and/or ZKPs on summary reports*)
-event auditor_accepts(hbid,booth,choice1).
+event auditor_accepts(hbid,booth,choice1, ZKproof).
 
 (*Event voter submits an old receipt2 to vote coercer/buyer*)
 event coercer_deceived(hbid, choice1, time1, count, booth).
@@ -31,17 +43,33 @@ event ea_receipt(hbid, fval, time1, count, booth).
 event judge_accepts(hbid, choice1, booth).
 event judge_rejects_voterclaim(hbid, choice1, booth).
 event judge_falsfies_election(hbid, choice1, choice1, booth).
+event judge_rejects_absentvoting_claim(id,booth,ZKproof).
+
+(*assumptions and/or cryptographic facts*)
+axiom ID:id, h:hbid, t1:time1, b:booth, zk1,zk11:ZKproof;
+ event(add_id_toZKP(zk1, ID, h, t1, b, true)) ==> (h= check_ZKP_inclusion(zk11, ID, b, true)).
+ (*event(add_id_toZKP(zk1, ID, h, t1, b, true)) ==> flag=true.*)
+
+query ID:id, h:hbid, t,t1:time1, fv:fval, n:count, b:booth, zk1:ZKproof;
+    inj-event(judge_rejects_absentvoting_claim(ID,b,zk1)) ==> inj-event(ea_receipt(h, fv, t, n, b)) && (h= check_ZKP_inclusion(zk1, ID, b, true)).
+
+
+
+axiom h:hbid, v: choice1, t:time1, n:count, b:booth, zk3,zk33:ZKproof;
+ event(add_vote_toZKP(zk3, h, v, t, n, b)) ==> v=check_ZKP3_vote(zk33, h, b);
+ event(add_vote_toZKP(zk3, h, v, t, n, b)) ==> n =check_ZKP3_count(zk33, h, b).
+ 
 
 
 (* Queries *)
 
 (*auditor phase*)
-query h: hbid, v: choice1, fv:fval, t11,t22:time1, t1,t2: time, b: booth, n_voter, n_pollworker:count, voter:id;
-      inj-event(auditor_accepts(h,b,v)) ==> (inj-event (voter_receipt1(voter, h, t11, b))@t1) && (inj-event (cast_final(h, v, t22, n_voter, b))@t2) && (t1 <t2) && inj-event(sealing_receipt(h, fv, t22, n_pollworker, b)) && (fv=F(h,v)) && (n_voter = n_pollworker).
+query h: hbid, v: choice1, fv:fval, t11,t22:time1, t1,t2: time, b: booth, n_voter, n_pollworker:count, voter:id,z3:ZKproof;
+      inj-event(auditor_accepts(h,b,v,z3)) ==> (inj-event (voter_receipt1(voter, h, t11, b))@t1) && (inj-event (cast_final(h, v, t22, n_voter, b))@t2) && (t1 <t2) && inj-event(sealing_receipt(h, fv, t22, n_pollworker, b)) && (fv=F(h,v)) && (n_voter = n_pollworker) && (v = check_ZKP3_vote(z3, h, b)) && (n_voter = check_ZKP3_count(z3, h, b)).
 
 (*coercer deceived*)
 query h: hbid, v,v_final: choice1, t11,t22:time1, t1,t2: time, b: booth, n, n_final:count;
-inj-event(coercer_deceived(h, v, t11, n, b)) ==> (inj-event (voter_receipts2(h, v, t11, n, b))@t1) && (inj-event (cast_final(h, v_final, t22, n_final, b))@t2) && (t1 <t2) && (n <> n_final).
+      inj-event(coercer_deceived(h, v, t11, n, b)) ==> (inj-event (voter_receipts2(h, v, t11, n, b))@t1) && (inj-event (cast_final(h, v_final, t22, n_final, b))@t2) && (t1 <t2) && (n <> n_final).
 
 (* Soundness: judge_accepts implies consistent values *)
 query h: hbid, v: choice1, fv:fval, t: time1, b: booth, n:count;
@@ -51,8 +79,8 @@ query h: hbid, v,v_voter: choice1, t,t_voter: time1, b: booth, n:count;
       inj-event(judge_accepts(h, v, b)) ==> inj-event(pbb_entry(b, t, v, n)) && inj-event (cast_final(h, v_voter, t_voter, n, b))&& (v = v_voter)&& (t = t_voter).
 
 (* judge_rejects voter claim if the voter submitted an older receipt to deceive the court *)
-query h: hbid, v,v_voter: choice1, fv:fval, t,t_voter: time1, b: booth, n,n_voter:count;
-      inj-event(judge_rejects_voterclaim(h, v_voter, b)) ==> inj-event(pbb_entry(b, t, v, n)) && inj-event(ea_receipt(h, fv, t, n, b)) && inj-event(voter_receipts2(h, v_voter, t_voter, n_voter, b)) && (fv=F(h,v)) && (v <> v_voter) && ((n <> n_voter)||(t <> t_voter)) && inj-event(auditor_accepts(h,b,v)).
+query h: hbid, v,v_voter: choice1, fv:fval, t,t_voter: time1, b: booth, n,n_voter:count, zk:ZKproof;
+      inj-event(judge_rejects_voterclaim(h, v_voter, b)) ==> inj-event(pbb_entry(b, t, v, n)) && inj-event(ea_receipt(h, fv, t, n, b)) && inj-event(voter_receipts2(h, v_voter, t_voter, n_voter, b)) && (fv=F(h,v)) && (v <> v_voter) && ((n <> n_voter)||(t <> t_voter)) && inj-event(auditor_accepts(h,b,v,zk)).
 
 (*judge falsifies election at this booth and session(between 2 checkpoints) if voter showed a newer recepit that is not counted*)
 query h: hbid, v_PBB,v_voter: choice1, fv:fval, t_PBB,t_voter,t_EA: time1, b: booth, n_PBB,n_voter,n_EA:count;
@@ -64,6 +92,8 @@ query h: hbid, v,v_voter: choice1, fv:fval, t, t_voter, t_EA: time1, b: booth, n
      inj-event(judge_accepts(h, v, b)) && inj-event(cast_final(h, v_voter, t_voter, n, b)) && inj-event(ea_receipt(h, fv, t_EA, n, b)) ==> ((v=v_voter) && (fv=F(h,v_voter)) && (t = t_voter) && (t_voter = t_EA)).
 query h: hbid, v,v_voter,v_PBB: choice1,  t, t_voter, t_PBB: time1, b: booth, n:count;
      inj-event(judge_accepts(h, v, b)) && inj-event(cast_final(h, v_voter, t_voter, n, b)) && inj-event(pbb_entry(b, t_PBB, v_PBB, n)) ==> ((v=v_voter) && (v_PBB=v) && (t = t_voter) && (t_voter = t_PBB)).
+
+
 
 (* trust assumption: EA cannot fabricate a receipt without a cast_final *)
 query h: hbid, fv:fval, v: choice1, t: time1, b: booth, n:count;
@@ -84,19 +114,29 @@ process
   new T2_final  : time1;
   new C_final  : choice1;
   new N_final  : count;
+  new Nz:  count;
+  new Cz:  choice1;
+  new ZKP1: ZKproof;
+  new ZKP2: ZKproof;
+  new ZKP3: ZKproof;
+  
 
   (* 1. The entrance Phase : generating HBID and printing receipt1 from Device1 *)
   let HB = H(ID, r) in
   event voter_receipt1(ID,HB,T1,B);
+  event add_id_toZKP(ZKP1, ID, HB, T1, B, true);
+ 
 
   (* 2. The Intermediate Voting Phase on Device2: should be 1 or more times,but let's assume the existence of at least 2 pairs to test all checks *)
   (* The voter can generate many receipt2s to show coercers *)
  
   let N = initiate() in                (*assume equivalent to make it 1*)
   event voter_receipts2(HB, C, T2, N, B);  (* keeping the old values as the values that will be in the voter_receipts2 copy shown to coercers*)
+  event add_vote_toZKP(ZKP2, HB, C, T2, N, B);
   
   let N_final = increment(N) in                 (*counter*)
   event voter_receipts2(HB, C_final, T2_final, N_final, B);
+  event add_vote_toZKP(ZKP2, HB, C_final, T2_final, N_final, B);
 
   !(
     let C = C_final in    (* keeping the old values as the values that will be in the voter_receipts2 copy shown to coercers*)
@@ -105,6 +145,7 @@ process
 
     let N_final = increment(N_final) in                 (*counter*)
     event voter_receipts2(HB, C_final, T2_final, N_final, B);
+    event add_vote_toZKP(ZKP2, HB, C_final, T2_final, N_final, B);
         
     (* This '!' means repitition and stops here, but the process 
        proceeds when the voter is done revoting to the sealing receipt where the values of T and C and N are now final*)
@@ -113,8 +154,12 @@ process
     
     (* 3. The Sealing/Final Phase (Happens exactly once) *)
     
-    event cast_final(HB, C_final, T2_final, N_final, B); (* since we are out of the loop this is the final receipt *)
+    event cast_final(HB, C_final, T2_final, N_final, B); 
+    (* since we are out of the loop this is the final receipt so cast as final, and assume a 3rd ZKP to check the final cast only*)
+    (*i.e., ZKP3 is the one frequently used for ex. for RLAs by auditors, and ZKP2 is only used by court to check the archieving of every detailed voting step in case of a large dispute *)
+    event add_vote_toZKP(ZKP3, HB, C_final, T2_final, N_final, B);
     
+
     let FV = F(HB, C_final) in
     (* The Sealing Receipt (only for poll workers/EA) *)
     event sealing_receipt(HB, FV, T2_final, N_final, B);
@@ -124,9 +169,9 @@ process
     new C_from_set : choice1;  (* Those should be a tuple from the repition array*)
     out(net, (HB, C, T2, N, B)); (* voter shows a receipt on a public channel to court*)
     event coercer_deceived(HB, C, T2, N, B);
-    
- event auditor_accepts(HB, B, C_final);      (*should happen at checkpoints before signing summary reports*)
- 
+   
+ event auditor_accepts(HB, B, C_final,ZKP3);      (*should happen for RLA samples at checkpoints before signing summary reports*)
+  out(net,(B,T2_final,ZKP1,ZKP3));
 
  event pbb_entry(B, T2_final, C_final, N_final);
   out(net, (B, T2_final, C_final, N_final));            (* PBB is public by design *)
@@ -135,10 +180,13 @@ process
  (* EA's sealing receipt is kept in a box (net can see it eventually) *)
    out(net, (HB, FV, T2_final, N_final, B)); 
 
+
+
  event judge_accepts(HB, C_final, B);      (*judge accepts election integrity if consistent*)
  
  (*judge accepts voter claim of false election, this will only be for the designated booth between the 2 checkpoints the voter timing indicates*)
  event judge_rejects_voterclaim(HB, C, B);  (*judge rejects voter claim if used the coercers trick and submitted an older receipt2*)
  event judge_falsfies_election(HB, C_from_set, C_final, B);  
+ event judge_rejects_absentvoting_claim(ID,B,ZKP1);
   0
 )

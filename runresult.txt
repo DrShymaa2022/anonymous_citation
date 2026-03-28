@@ -1,15 +1,15 @@
 C:\Users\**\proverif2.05>proverif court_final.pv
-File "court_final.pv", line 95, character 7:
+File "court_final.pv", line 133, character 7:
 Warning: identifier N rebound.
-File "court_final.pv", line 98, characters 7-13:
+File "court_final.pv", line 137, characters 7-13:
 Warning: identifier N_final rebound.
-File "court_final.pv", line 102, character 9:
+File "court_final.pv", line 142, character 9:
 Warning: identifier C rebound.
-File "court_final.pv", line 103, characters 9-10:
+File "court_final.pv", line 143, characters 9-10:
 Warning: identifier T2 rebound.
-File "court_final.pv", line 104, character 9:
+File "court_final.pv", line 144, character 9:
 Warning: identifier N rebound.
-File "court_final.pv", line 106, characters 9-15:
+File "court_final.pv", line 146, characters 9-15:
 Warning: identifier N_final rebound.
 Process 0 (that is, the initial process):
 {1}new ID: id;
@@ -22,34 +22,46 @@ Process 0 (that is, the initial process):
 {8}new T2_final: time1;
 {9}new C_final: choice1;
 {10}new N_final: count;
-{11}let HB: hbid = H(ID,r) in
-{12}event voter_receipt1(ID,HB,T1,B);
-{13}let N_1: count = initiate in
-{14}event voter_receipts2(HB,C,T2,N_1,B);
-{15}let N_final_1: count = increment(N_1) in
-{16}event voter_receipts2(HB,C_final,T2_final,N_final_1,B);
+{11}new Nz: count;
+{12}new Cz: choice1;
+{13}new ZKP1: ZKproof;
+{14}new ZKP2: ZKproof;
+{15}new ZKP3: ZKproof;
+{16}let HB: hbid = H(ID,r) in
+{17}event voter_receipt1(ID,HB,T1,B);
+{18}event add_id_toZKP(ZKP1,ID,HB,T1,B,true);
+{19}let N_1: count = initiate in
+{20}event voter_receipts2(HB,C,T2,N_1,B);
+{21}event add_vote_toZKP(ZKP2,HB,C,T2,N_1,B);
+{22}let N_final_1: count = increment(N_1) in
+{23}event voter_receipts2(HB,C_final,T2_final,N_final_1,B);
+{24}event add_vote_toZKP(ZKP2,HB,C_final,T2_final,N_final_1,B);
 (
-    {17}!
-    {18}let C_1: choice1 = C_final in
-    {19}let T2_1: time1 = T2_final in
-    {20}let N_2: count = N_final_1 in
-    {21}let N_final_2: count = increment(N_final_1) in
-    {22}event voter_receipts2(HB,C_final,T2_final,N_final_2,B)
+    {25}!
+    {26}let C_1: choice1 = C_final in
+    {27}let T2_1: time1 = T2_final in
+    {28}let N_2: count = N_final_1 in
+    {29}let N_final_2: count = increment(N_final_1) in
+    {30}event voter_receipts2(HB,C_final,T2_final,N_final_2,B);
+    {31}event add_vote_toZKP(ZKP2,HB,C_final,T2_final,N_final_2,B)
 ) | (
-    {23}event cast_final(HB,C_final,T2_final,N_final_1,B);
-    {24}let FV: fval = F(HB,C_final) in
-    {25}event sealing_receipt(HB,FV,T2_final,N_final_1,B);
-    {26}new C_from_set: choice1;
-    {27}out(net, (HB,C,T2,N_1,B));
-    {28}event coercer_deceived(HB,C,T2,N_1,B);
-    {29}event auditor_accepts(HB,B,C_final);
-    {30}event pbb_entry(B,T2_final,C_final,N_final_1);
-    {31}out(net, (B,T2_final,C_final,N_final_1));
-    {32}event ea_receipt(HB,FV,T2_final,N_final_1,B);
-    {33}out(net, (HB,FV,T2_final,N_final_1,B));
-    {34}event judge_accepts(HB,C_final,B);
-    {35}event judge_rejects_voterclaim(HB,C,B);
-    {36}event judge_falsfies_election(HB,C_from_set,C_final,B)
+    {32}event cast_final(HB,C_final,T2_final,N_final_1,B);
+    {33}event add_vote_toZKP(ZKP3,HB,C_final,T2_final,N_final_1,B);
+    {34}let FV: fval = F(HB,C_final) in
+    {35}event sealing_receipt(HB,FV,T2_final,N_final_1,B);
+    {36}new C_from_set: choice1;
+    {37}out(net, (HB,C,T2,N_1,B));
+    {38}event coercer_deceived(HB,C,T2,N_1,B);
+    {39}event auditor_accepts(HB,B,C_final,ZKP3);
+    {40}out(net, (B,T2_final,ZKP1,ZKP3));
+    {41}event pbb_entry(B,T2_final,C_final,N_final_1);
+    {42}out(net, (B,T2_final,C_final,N_final_1));
+    {43}event ea_receipt(HB,FV,T2_final,N_final_1,B);
+    {44}out(net, (HB,FV,T2_final,N_final_1,B));
+    {45}event judge_accepts(HB,C_final,B);
+    {46}event judge_rejects_voterclaim(HB,C,B);
+    {47}event judge_falsfies_election(HB,C_from_set,C_final,B);
+    {48}event judge_rejects_absentvoting_claim(ID,B,ZKP1)
 )
 
 --  Process 1 (that is, process 0, with let moved downwards):
@@ -63,121 +75,120 @@ Process 0 (that is, the initial process):
 {8}new T2_final: time1;
 {9}new C_final: choice1;
 {10}new N_final: count;
-{11}let HB: hbid = H(ID,r) in
-{12}event voter_receipt1(ID,HB,T1,B);
-{13}let N_1: count = initiate in
-{14}event voter_receipts2(HB,C,T2,N_1,B);
-{15}let N_final_1: count = increment(N_1) in
-{16}event voter_receipts2(HB,C_final,T2_final,N_final_1,B);
+{11}new Nz: count;
+{12}new Cz: choice1;
+{13}new ZKP1: ZKproof;
+{14}new ZKP2: ZKproof;
+{15}new ZKP3: ZKproof;
+{16}let HB: hbid = H(ID,r) in
+{17}event voter_receipt1(ID,HB,T1,B);
+{18}event add_id_toZKP(ZKP1,ID,HB,T1,B,true);
+{19}let N_1: count = initiate in
+{20}event voter_receipts2(HB,C,T2,N_1,B);
+{21}event add_vote_toZKP(ZKP2,HB,C,T2,N_1,B);
+{22}let N_final_1: count = increment(N_1) in
+{23}event voter_receipts2(HB,C_final,T2_final,N_final_1,B);
+{24}event add_vote_toZKP(ZKP2,HB,C_final,T2_final,N_final_1,B);
 (
-    {17}!
-    {21}let N_final_2: count = increment(N_final_1) in
-    {22}event voter_receipts2(HB,C_final,T2_final,N_final_2,B)
+    {25}!
+    {29}let N_final_2: count = increment(N_final_1) in
+    {30}event voter_receipts2(HB,C_final,T2_final,N_final_2,B);
+    {31}event add_vote_toZKP(ZKP2,HB,C_final,T2_final,N_final_2,B)
 ) | (
-    {23}event cast_final(HB,C_final,T2_final,N_final_1,B);
-    {24}let FV: fval = F(HB,C_final) in
-    {25}event sealing_receipt(HB,FV,T2_final,N_final_1,B);
-    {26}new C_from_set: choice1;
-    {27}out(net, (HB,C,T2,N_1,B));
-    {28}event coercer_deceived(HB,C,T2,N_1,B);
-    {29}event auditor_accepts(HB,B,C_final);
-    {30}event pbb_entry(B,T2_final,C_final,N_final_1);
-    {31}out(net, (B,T2_final,C_final,N_final_1));
-    {32}event ea_receipt(HB,FV,T2_final,N_final_1,B);
-    {33}out(net, (HB,FV,T2_final,N_final_1,B));
-    {34}event judge_accepts(HB,C_final,B);
-    {35}event judge_rejects_voterclaim(HB,C,B);
-    {36}event judge_falsfies_election(HB,C_from_set,C_final,B)
+    {32}event cast_final(HB,C_final,T2_final,N_final_1,B);
+    {33}event add_vote_toZKP(ZKP3,HB,C_final,T2_final,N_final_1,B);
+    {34}let FV: fval = F(HB,C_final) in
+    {35}event sealing_receipt(HB,FV,T2_final,N_final_1,B);
+    {36}new C_from_set: choice1;
+    {37}out(net, (HB,C,T2,N_1,B));
+    {38}event coercer_deceived(HB,C,T2,N_1,B);
+    {39}event auditor_accepts(HB,B,C_final,ZKP3);
+    {40}out(net, (B,T2_final,ZKP1,ZKP3));
+    {41}event pbb_entry(B,T2_final,C_final,N_final_1);
+    {42}out(net, (B,T2_final,C_final,N_final_1));
+    {43}event ea_receipt(HB,FV,T2_final,N_final_1,B);
+    {44}out(net, (HB,FV,T2_final,N_final_1,B));
+    {45}event judge_accepts(HB,C_final,B);
+    {46}event judge_rejects_voterclaim(HB,C,B);
+    {47}event judge_falsfies_election(HB,C_from_set,C_final,B);
+    {48}event judge_rejects_absentvoting_claim(ID,B,ZKP1)
 )
 
--- Query inj-event(auditor_accepts(h,b,v)) ==> inj-event(voter_receipt1(voter,h,t11,b))@t1 && inj-event(cast_final(h,v,t22,n_voter,b))@t2 && t2 > t1 && inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && fv = F(h,v) && n_voter = n_pollworker encoded as inj-event(auditor_accepts(h,b,v)) ==> inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && (inj-event(cast_final(h,v,t22,n_voter,b)) ==> inj-event(voter_receipt1(voter,h,t11,b))) && fv = F(h,v) && n_voter = n_pollworker in process 1.
+-- Axiom event(add_id_toZKP(zk1,ID_1,h,t1,b,true)) ==> h = check_ZKP_inclusion(zk11,ID_1,b,true) in process 1.
+-- Axiom
+   event(add_vote_toZKP(zk3,h,v,t,n,b)) ==> v = check_ZKP3_vote(zk33,h,b)
+   event(add_vote_toZKP(zk3,h,v,t,n,b)) ==> n = check_ZKP3_count(zk33,h,b)
+ in process 1.
+-- Query inj-event(judge_rejects_absentvoting_claim(ID_1,b,zk1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,ID_1,b,true) in process 1.
 Translating the process into Horn clauses...
 Completing...
-Starting query inj-event(auditor_accepts(h,b,v)) ==> inj-event(voter_receipt1(voter,h,t11,b))@t1 && inj-event(cast_final(h,v,t22,n_voter,b))@t2 && t2 > t1 && inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && fv = F(h,v) && n_voter = n_pollworker
-goal reachable: b-inj-event(sealing_receipt(H(ID[],r[]),F(H(ID[],r[]),C_final[]),T2_final[],increment(initiate),B[]),@occ25[]) && b-inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23[]) && b-inj-event(voter_receipt1(ID[],H(ID[],r[]),T1[],B[]),@occ12[]) -> inj-event(auditor_accepts(H(ID[],r[]),B[],C_final[]),@occ29[])
-The 1st, 2nd, 3rd hypotheses occur strictly before the conclusion.
-goal reachable: b-inj-event(sealing_receipt(H(ID[],r[]),F(H(ID[],r[]),C_final[]),T2_final[],increment(initiate),B[]),@occ25[]) && b-inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23[]) && b-inj-event(voter_receipt1(ID[],H(ID[],r[]),T1[],B[]),@occ12[]) -> inj-event(auditor_accepts(H(ID[],r[]),B[],C_final[]),@occ29[]) && inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23[])
-The 1st, 2nd, 3rd hypotheses occur strictly before the 1st conclusion.
-The 3rd hypothesis occurs strictly before the 2nd conclusion.
-RESULT inj-event(auditor_accepts(h,b,v)) ==> inj-event(voter_receipt1(voter,h,t11,b))@t1 && inj-event(cast_final(h,v,t22,n_voter,b))@t2 && t2 > t1 && inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && fv = F(h,v) && n_voter = n_pollworker is true.
+Starting query inj-event(judge_rejects_absentvoting_claim(ID_1,b,zk1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,ID_1,b,true)
+RESULT inj-event(judge_rejects_absentvoting_claim(ID_1,b,zk1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,ID_1,b,true) is true.
+-- Query inj-event(auditor_accepts(h,b,v,z3)) ==> inj-event(voter_receipt1(voter,h,t11,b))@t1 && inj-event(cast_final(h,v,t22,n_voter,b))@t2 && t2 > t1 && inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && fv = F(h,v) && n_voter = n_pollworker && v = check_ZKP3_vote(z3,h,b) && n_voter = check_ZKP3_count(z3,h,b) encoded as inj-event(auditor_accepts(h,b,v,z3)) ==> inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && (inj-event(cast_final(h,v,t22,n_voter,b)) ==> inj-event(voter_receipt1(voter,h,t11,b))) && fv = F(h,v) && n_voter = n_pollworker && v = check_ZKP3_vote(z3,h,b) && n_voter = check_ZKP3_count(z3,h,b) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query inj-event(auditor_accepts(h,b,v,z3)) ==> inj-event(voter_receipt1(voter,h,t11,b))@t1 && inj-event(cast_final(h,v,t22,n_voter,b))@t2 && t2 > t1 && inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && fv = F(h,v) && n_voter = n_pollworker && v = check_ZKP3_vote(z3,h,b) && n_voter = check_ZKP3_count(z3,h,b)
+RESULT inj-event(auditor_accepts(h,b,v,z3)) ==> inj-event(voter_receipt1(voter,h,t11,b))@t1 && inj-event(cast_final(h,v,t22,n_voter,b))@t2 && t2 > t1 && inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && fv = F(h,v) && n_voter = n_pollworker && v = check_ZKP3_vote(z3,h,b) && n_voter = check_ZKP3_count(z3,h,b) is true.
 -- Query inj-event(coercer_deceived(h,v,t11,n,b)) ==> inj-event(voter_receipts2(h,v,t11,n,b))@t1 && inj-event(cast_final(h,v_final,t22,n_final,b))@t2 && t2 > t1 && n ≠ n_final encoded as inj-event(coercer_deceived(h,v,t11,n,b)) ==> (inj-event(cast_final(h,v_final,t22,n_final,b)) ==> inj-event(voter_receipts2(h,v,t11,n,b))) && n ≠ n_final in process 1.
 Translating the process into Horn clauses...
 Completing...
 Starting query inj-event(coercer_deceived(h,v,t11,n,b)) ==> inj-event(voter_receipts2(h,v,t11,n,b))@t1 && inj-event(cast_final(h,v_final,t22,n_final,b))@t2 && t2 > t1 && n ≠ n_final
-goal reachable: b-inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23_1[]) && b-inj-event(voter_receipts2(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ16[]) && b-inj-event(voter_receipts2(H(ID[],r[]),C[],T2[],initiate,B[]),@occ14[]) -> inj-event(coercer_deceived(H(ID[],r[]),C[],T2[],initiate,B[]),@occ28[])
-The 1st, 2nd, 3rd hypotheses occur strictly before the conclusion.
-goal reachable: b-inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23_1[]) && b-inj-event(voter_receipts2(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ16[]) && b-inj-event(voter_receipts2(H(ID[],r[]),C[],T2[],initiate,B[]),@occ14[]) -> inj-event(coercer_deceived(H(ID[],r[]),C[],T2[],initiate,B[]),@occ28[]) && inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23_1[])
-The 1st, 2nd, 3rd hypotheses occur strictly before the 1st conclusion.
-The 2nd, 3rd hypotheses occur strictly before the 2nd conclusion.
 RESULT inj-event(coercer_deceived(h,v,t11,n,b)) ==> inj-event(voter_receipts2(h,v,t11,n,b))@t1 && inj-event(cast_final(h,v_final,t22,n_final,b))@t2 && t2 > t1 && n ≠ n_final is true.
 -- Query inj-event(judge_accepts(h,v,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(ea_receipt(h,fv,t,n,b)) && fv = F(h,v) in process 1.
 Translating the process into Horn clauses...
 Completing...
 Starting query inj-event(judge_accepts(h,v,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(ea_receipt(h,fv,t,n,b)) && fv = F(h,v)
-goal reachable: b-inj-event(ea_receipt(H(ID[],r[]),F(H(ID[],r[]),C_final[]),T2_final[],increment(initiate),B[]),@occ32[]) && b-inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23_2[]) -> inj-event(judge_accepts(H(ID[],r[]),C_final[],B[]),@occ34[])
-The 1st, 2nd hypotheses occur strictly before the conclusion.
 RESULT inj-event(judge_accepts(h,v,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(ea_receipt(h,fv,t,n,b)) && fv = F(h,v) is true.
 -- Query inj-event(judge_accepts(h,v,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(cast_final(h,v_voter,t_voter,n,b)) && v = v_voter && t = t_voter in process 1.
 Translating the process into Horn clauses...
 Completing...
 Starting query inj-event(judge_accepts(h,v,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(cast_final(h,v_voter,t_voter,n,b)) && v = v_voter && t = t_voter
-goal reachable: b-inj-event(pbb_entry(B[],T2_final[],C_final[],increment(initiate)),@occ30[]) && b-inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23_3[]) -> inj-event(judge_accepts(H(ID[],r[]),C_final[],B[]),@occ34_1[])
-The 1st, 2nd hypotheses occur strictly before the conclusion.
 RESULT inj-event(judge_accepts(h,v,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(cast_final(h,v_voter,t_voter,n,b)) && v = v_voter && t = t_voter is true.
--- Query inj-event(judge_rejects_voterclaim(h,v_voter,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(ea_receipt(h,fv,t,n,b)) && inj-event(voter_receipts2(h,v_voter,t_voter,n_voter,b)) && fv = F(h,v) && v ≠ v_voter && (n ≠ n_voter || t ≠ t_voter) && inj-event(auditor_accepts(h,b,v)) in process 1.
+-- Query inj-event(judge_rejects_voterclaim(h,v_voter,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(ea_receipt(h,fv,t,n,b)) && inj-event(voter_receipts2(h,v_voter,t_voter,n_voter,b)) && fv = F(h,v) && v ≠ v_voter && (n ≠ n_voter || t ≠ t_voter) && inj-event(auditor_accepts(h,b,v,zk)) in process 1.
 Translating the process into Horn clauses...
 Completing...
-Starting query inj-event(judge_rejects_voterclaim(h,v_voter,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(ea_receipt(h,fv,t,n,b)) && inj-event(voter_receipts2(h,v_voter,t_voter,n_voter,b)) && fv = F(h,v) && v ≠ v_voter && (n ≠ n_voter || t ≠ t_voter) && inj-event(auditor_accepts(h,b,v))
-goal reachable: b-inj-event(ea_receipt(H(ID[],r[]),F(H(ID[],r[]),C_final[]),T2_final[],increment(initiate),B[]),@occ32_1[]) && b-inj-event(pbb_entry(B[],T2_final[],C_final[],increment(initiate)),@occ30_1[]) && b-inj-event(auditor_accepts(H(ID[],r[]),B[],C_final[]),@occ29_1[]) && b-inj-event(voter_receipts2(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ16_1[]) && b-inj-event(voter_receipts2(H(ID[],r[]),C[],T2[],initiate,B[]),@occ14_1[]) -> inj-event(judge_rejects_voterclaim(H(ID[],r[]),C[],B[]),@occ35[])
-The 1st, 2nd, 3rd, 4th, 5th hypotheses occur strictly before the conclusion.
-RESULT inj-event(judge_rejects_voterclaim(h,v_voter,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(ea_receipt(h,fv,t,n,b)) && inj-event(voter_receipts2(h,v_voter,t_voter,n_voter,b)) && fv = F(h,v) && v ≠ v_voter && (n ≠ n_voter || t ≠ t_voter) && inj-event(auditor_accepts(h,b,v)) is true.
+Starting query inj-event(judge_rejects_voterclaim(h,v_voter,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(ea_receipt(h,fv,t,n,b)) && inj-event(voter_receipts2(h,v_voter,t_voter,n_voter,b)) && fv = F(h,v) && v ≠ v_voter && (n ≠ n_voter || t ≠ t_voter) && inj-event(auditor_accepts(h,b,v,zk))
+RESULT inj-event(judge_rejects_voterclaim(h,v_voter,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(ea_receipt(h,fv,t,n,b)) && inj-event(voter_receipts2(h,v_voter,t_voter,n_voter,b)) && fv = F(h,v) && v ≠ v_voter && (n ≠ n_voter || t ≠ t_voter) && inj-event(auditor_accepts(h,b,v,zk)) is true.
 -- Query inj-event(judge_falsfies_election(h,v_PBB,v_voter,b)) ==> inj-event(cast_final(h,v_voter,t_voter,n_voter,b)) && inj-event(ea_receipt(h,fv,t_EA,n_EA,b)) && fv = F(h,v_voter) && n_EA = n_voter && t_EA = t_voter && v_PBB ≠ v_voter in process 1.
 Translating the process into Horn clauses...
 Completing...
 Starting query inj-event(judge_falsfies_election(h,v_PBB,v_voter,b)) ==> inj-event(cast_final(h,v_voter,t_voter,n_voter,b)) && inj-event(ea_receipt(h,fv,t_EA,n_EA,b)) && fv = F(h,v_voter) && n_EA = n_voter && t_EA = t_voter && v_PBB ≠ v_voter
-goal reachable: b-inj-event(ea_receipt(H(ID[],r[]),F(H(ID[],r[]),C_final[]),T2_final[],increment(initiate),B[]),@occ32_2[]) && b-inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23_4[]) -> inj-event(judge_falsfies_election(H(ID[],r[]),C_from_set[],C_final[],B[]),@occ36[])
-The 1st, 2nd hypotheses occur strictly before the conclusion.
 RESULT inj-event(judge_falsfies_election(h,v_PBB,v_voter,b)) ==> inj-event(cast_final(h,v_voter,t_voter,n_voter,b)) && inj-event(ea_receipt(h,fv,t_EA,n_EA,b)) && fv = F(h,v_voter) && n_EA = n_voter && t_EA = t_voter && v_PBB ≠ v_voter is true.
 -- Query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(ea_receipt(h,fv,t_EA,n,b)) ==> v = v_voter && fv = F(h,v_voter) && t = t_voter && t_voter = t_EA in process 1.
 Translating the process into Horn clauses...
 Completing...
 Starting query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(ea_receipt(h,fv,t_EA,n,b)) ==> v = v_voter && fv = F(h,v_voter) && t = t_voter && t_voter = t_EA
-goal reachable: event(judge_accepts(H(ID[],r[]),C_final[],B[])) && event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[])) && event(ea_receipt(H(ID[],r[]),F(H(ID[],r[]),C_final[]),T2_final[],increment(initiate),B[]))
 RESULT event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(ea_receipt(h,fv,t_EA,n,b)) ==> v = v_voter && fv = F(h,v_voter) && t = t_voter && t_voter = t_EA is true.
 -- Query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(pbb_entry(b,t_PBB,v_PBB,n)) ==> v = v_voter && v_PBB = v && t = t_voter && t_voter = t_PBB in process 1.
 Translating the process into Horn clauses...
 Completing...
 Starting query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(pbb_entry(b,t_PBB,v_PBB,n)) ==> v = v_voter && v_PBB = v && t = t_voter && t_voter = t_PBB
-goal reachable: event(judge_accepts(H(ID[],r[]),C_final[],B[])) && event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[])) && event(pbb_entry(B[],T2_final[],C_final[],increment(initiate)))
 RESULT event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(pbb_entry(b,t_PBB,v_PBB,n)) ==> v = v_voter && v_PBB = v && t = t_voter && t_voter = t_PBB is true.
 -- Query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(sealing_receipt(h,fv,t,n,b)) && fv = F(h,v) in process 1.
 Translating the process into Horn clauses...
 Completing...
 Starting query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(sealing_receipt(h,fv,t,n,b)) && fv = F(h,v)
-goal reachable: b-inj-event(sealing_receipt(H(ID[],r[]),F(H(ID[],r[]),C_final[]),T2_final[],increment(initiate),B[]),@occ25_1[]) && b-inj-event(cast_final(H(ID[],r[]),C_final[],T2_final[],increment(initiate),B[]),@occ23_5[]) -> inj-event(ea_receipt(H(ID[],r[]),F(H(ID[],r[]),C_final[]),T2_final[],increment(initiate),B[]),@occ32_3[])
-The 1st, 2nd hypotheses occur strictly before the conclusion.
 RESULT inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(sealing_receipt(h,fv,t,n,b)) && fv = F(h,v) is true.
 
 --------------------------------------------------------------
 Verification summary:
 
-Query inj-event(auditor_accepts(h,b,v)) ==> inj-event(voter_receipt1(voter,h,t11,b))@t1 && inj-event(cast_final(h,v,t22,n_voter,b))@t2 && t2 > t1 && inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && fv = F(h,v) && n_voter = n_pollworker is true.
-
-Query inj-event(coercer_deceived(h,v,t11,n,b)) ==> inj-event(voter_receipts2(h,v,t11,n,b))@t1 && inj-event(cast_final(h,v_final,t22,n_final,b))@t2 && t2 > t1 && n ≠ n_final is true.
-
-Query inj-event(judge_accepts(h,v,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(ea_receipt(h,fv,t,n,b)) && fv = F(h,v) is true.
-
-Query inj-event(judge_accepts(h,v,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(cast_final(h,v_voter,t_voter,n,b)) && v = v_voter && t = t_voter is true.
-
-Query inj-event(judge_rejects_voterclaim(h,v_voter,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(ea_receipt(h,fv,t,n,b)) && inj-event(voter_receipts2(h,v_voter,t_voter,n_voter,b)) && fv = F(h,v) && v ≠ v_voter && (n ≠ n_voter || t ≠ t_voter) && inj-event(auditor_accepts(h,b,v)) is true.
-
-Query inj-event(judge_falsfies_election(h,v_PBB,v_voter,b)) ==> inj-event(cast_final(h,v_voter,t_voter,n_voter,b)) && inj-event(ea_receipt(h,fv,t_EA,n_EA,b)) && fv = F(h,v_voter) && n_EA = n_voter && t_EA = t_voter && v_PBB ≠ v_voter is true.
-
-Query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(ea_receipt(h,fv,t_EA,n,b)) ==> v = v_voter && fv = F(h,v_voter) && t = t_voter && t_voter = t_EA is true.
-
-Query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(pbb_entry(b,t_PBB,v_PBB,n)) ==> v = v_voter && v_PBB = v && t = t_voter && t_voter = t_PBB is true.
-
-Query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(sealing_receipt(h,fv,t,n,b)) && fv = F(h,v) is true.
+Query(ies):
+ - Query inj-event(judge_rejects_absentvoting_claim(ID_1,b,zk1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,ID_1,b,true) is true.
+ - Query inj-event(auditor_accepts(h,b,v,z3)) ==> inj-event(voter_receipt1(voter,h,t11,b))@t1 && inj-event(cast_final(h,v,t22,n_voter,b))@t2 && t2 > t1 && inj-event(sealing_receipt(h,fv,t22,n_pollworker,b)) && fv = F(h,v) && n_voter = n_pollworker && v = check_ZKP3_vote(z3,h,b) && n_voter = check_ZKP3_count(z3,h,b) is true.
+ - Query inj-event(coercer_deceived(h,v,t11,n,b)) ==> inj-event(voter_receipts2(h,v,t11,n,b))@t1 && inj-event(cast_final(h,v_final,t22,n_final,b))@t2 && t2 > t1 && n ≠ n_final is true.
+ - Query inj-event(judge_accepts(h,v,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(ea_receipt(h,fv,t,n,b)) && fv = F(h,v) is true.
+ - Query inj-event(judge_accepts(h,v,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(cast_final(h,v_voter,t_voter,n,b)) && v = v_voter && t = t_voter is true.
+ - Query inj-event(judge_rejects_voterclaim(h,v_voter,b)) ==> inj-event(pbb_entry(b,t,v,n)) && inj-event(ea_receipt(h,fv,t,n,b)) && inj-event(voter_receipts2(h,v_voter,t_voter,n_voter,b)) && fv = F(h,v) && v ≠ v_voter && (n ≠ n_voter || t ≠ t_voter) && inj-event(auditor_accepts(h,b,v,zk)) is true.
+ - Query inj-event(judge_falsfies_election(h,v_PBB,v_voter,b)) ==> inj-event(cast_final(h,v_voter,t_voter,n_voter,b)) && inj-event(ea_receipt(h,fv,t_EA,n_EA,b)) && fv = F(h,v_voter) && n_EA = n_voter && t_EA = t_voter && v_PBB ≠ v_voter is true.
+ - Query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(ea_receipt(h,fv,t_EA,n,b)) ==> v = v_voter && fv = F(h,v_voter) && t = t_voter && t_voter = t_EA is true.
+ - Query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(pbb_entry(b,t_PBB,v_PBB,n)) ==> v = v_voter && v_PBB = v && t = t_voter && t_voter = t_PBB is true.
+ - Query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(sealing_receipt(h,fv,t,n,b)) && fv = F(h,v) is true.
+Associated axiom(s):
+ - Axiom event(add_id_toZKP(zk1,ID_1,h,t1,b,true)) ==> h = check_ZKP_inclusion(zk11,ID_1,b,true) in process 1.
+ - Axiom
+   event(add_vote_toZKP(zk3,h,v,t,n,b)) ==> v = check_ZKP3_vote(zk33,h,b)
+   event(add_vote_toZKP(zk3,h,v,t,n,b)) ==> n = check_ZKP3_count(zk33,h,b)
+ in process 1.
 
 --------------------------------------------------------------
-
