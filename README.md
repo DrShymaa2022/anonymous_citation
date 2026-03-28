@@ -22,3 +22,14 @@ The code successfuly checks the predicates measuring the following: (all true)
     Judge_falsfies_election
     coercer_deceived
     auditor_accepts
+
+On 28/3/2026:
+
+a) axioms are added to represent ZKPs in summary reports.
+
+b) checking ZKP is successfully added to the auditor_accepts query.
+
+c) The code successfuly checks a new predicate about absent voting: (all true)
+
+            judge_rejects_absentvoting_claim
+
