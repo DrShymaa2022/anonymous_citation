@@ -33,3 +33,13 @@ c) The code successfuly checks a new predicate about absent voting: (all true)
 
             judge_rejects_absentvoting_claim
 
+On 29/3/2026:
+
+a) added an authentication function to make it accurately reflect the true system (there is identity and auth_id)
+
+b) removed unnecessary parameter (bool) from the check of non-inclusion, replacing it by  comparing to h_NULL value (instead of returning true/false, the ZKP whatever it is returns either the corresponding HBID if it exits, or a designated h_NULL if not)
+
+c) The code successfuly runs (all true ) with adding a new predicate about when to accept absent voting claim:
+
+            judge_accepts_absentvoting_claim
+
