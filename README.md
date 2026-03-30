@@ -43,3 +43,6 @@ c) The code successfuly runs (all true ) with adding a new predicate about when 
 
             judge_accepts_absentvoting_claim
 
+On 30/3/2026:
+
+just a little refinement that both absent voting queries (whether accept or reject the voter claim) take the bitstring identity (i.e. not the biometric authenticated identity) because voter claims not being there at all (no HBID, no receipts, no biometric check ... just submitting his/her identity card)
