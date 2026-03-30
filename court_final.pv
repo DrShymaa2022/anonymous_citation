@@ -17,7 +17,7 @@ fun increment(count): count.
 fun check_ZKP3_vote(ZKproof, hbid, booth): choice1.
 fun check_ZKP3_time(ZKproof, hbid, booth): time1.
 fun check_ZKP3_count(ZKproof, hbid, booth): count.
-fun check_ZKP_inclusion(ZKproof, auth_id, booth): hbid. 
+fun check_ZKP_inclusion(ZKproof, bitstring, booth): hbid.   (*non voters come with their bitstring identity, did not make a biometric check*)
 (*ZKP is supposed to provide non-inclusion proofs by returing h_NULL value*)
 fun NULL_value():hbid.
 
@@ -29,7 +29,7 @@ event voter_receipts2(hbid, choice1, time1, count, booth).
 event sealing_receipt(hbid, fval, time1, count, booth).
 event pbb_entry(booth, time1, choice1, count).
 (*adding votes to a chosen ZKP that is supposed to provide non-inclusion proofs, could be Verkle or Merkle Tree or STARK or any thing else*)
-event add_id_toZKP(ZKproof, auth_id, hbid, time1, booth, bool).
+event add_id_toZKP(ZKproof, bitstring, auth_id, hbid, time1, booth).
 event add_vote_toZKP(ZKproof, hbid, choice1, time1, count, booth).
 
 
@@ -45,12 +45,12 @@ event ea_receipt(hbid, fval, time1, count, booth).
 event judge_accepts(hbid, choice1, booth).
 event judge_rejects_voterclaim(hbid, choice1, booth).
 event judge_falsfies_election(hbid, choice1, choice1, booth).
-event judge_accepts_absentvoting_claim(auth_id,booth,ZKproof,hbid).
-event judge_rejects_absentvoting_claim(auth_id,booth,ZKproof,hbid).
+event judge_accepts_absentvoting_claim(bitstring,booth,ZKproof,hbid).
+event judge_rejects_absentvoting_claim(bitstring,booth,ZKproof,hbid).
 
 (*assumptions and/or cryptographic facts*)
-axiom ID:auth_id, h:hbid, t1:time1, b:booth, zk1,zk11:ZKproof;
- event(add_id_toZKP(zk1, ID, h, t1, b, true)) ==> (h= check_ZKP_inclusion(zk11, ID, b)).
+axiom identity:bitstring, ID:auth_id, h:hbid, t1:time1, b:booth, zk1,zk11:ZKproof;
+ event(add_id_toZKP(zk1, identity, ID, h, t1, b)) ==> (ID=biometric(identity)) && (h= check_ZKP_inclusion(zk11, identity, b)).
  
 axiom h:hbid, v: choice1, t:time1, n:count, b:booth, zk3,zk33:ZKproof;
  event(add_vote_toZKP(zk3, h, v, t, n, b)) ==> v=check_ZKP3_vote(zk33, h, b);
@@ -92,10 +92,10 @@ query h: hbid, v,v_voter,v_PBB: choice1,  t, t_voter, t_PBB: time1, b: booth, n:
 
 (*ABSENT VOTING*)
 (*To not depend solely on cryptography, judge should check other values from Summary Reports and handwritten signatures that can't be represented here*)
-query ID:auth_id, h,h_NULL:hbid, t,t1:time1, fv:fval, n:count, b:booth, zk1:ZKproof;
-    inj-event(judge_rejects_absentvoting_claim(ID,b,zk1,h_NULL)) ==> inj-event(ea_receipt(h, fv, t, n, b)) && (h= check_ZKP_inclusion(zk1, ID, b)) && (h <> h_NULL).
-query ID:auth_id, h,h_NULL:hbid, t,t1:time1, fv:fval, n:count, b:booth, zk1:ZKproof;
-    inj-event(judge_accepts_absentvoting_claim(ID,b,zk1,h_NULL)) ==> (h_NULL = check_ZKP_inclusion(zk1, ID, b)).
+query identity:bitstring, ID:auth_id, h,h_NULL:hbid, t,t1:time1, fv:fval, n:count, b:booth, zk1:ZKproof;
+    inj-event(judge_rejects_absentvoting_claim(identity,b,zk1,h_NULL)) ==> inj-event(ea_receipt(h, fv, t, n, b)) && (h= check_ZKP_inclusion(zk1, identity, b)) && (ID =biometric(identity)) &&(h <> h_NULL).
+query identity:bitstring, ID:auth_id, h,h_NULL:hbid, t,t1:time1, fv:fval, n:count, b:booth, zk1:ZKproof;
+    inj-event(judge_accepts_absentvoting_claim(identity,b,zk1,h_NULL)) ==> (h_NULL = check_ZKP_inclusion(zk1, identity, b)).
 
 
 (* trust assumption: EA cannot fabricate a receipt without a cast_final *)
@@ -107,7 +107,7 @@ query h: hbid, fv:fval, v: choice1, t: time1, b: booth, n:count;
 free net : channel.
 
 process
-  new Identity :bitstring;  (*assume identity number in voter's ID card*)
+  new Identity : bitstring;  (*assume identity number in voter's ID card*)
   new ID : auth_id;
   new r  : bitstring;
   new T1 : time1;   (*time of receipt1*)
@@ -130,7 +130,7 @@ process
   let ID = biometric(Identity) in     (*this could be replaced with any other authentication phase, for ex. entering code sent by mail like SwissPost*)
   let HB = H(ID, r) in
   event voter_receipt1(ID,HB,T1,B);
-  event add_id_toZKP(ZKP1, ID, HB, T1, B, true);
+  event add_id_toZKP(ZKP1, Identity, ID, HB, T1, B);
  
 
   (* 2. The Intermediate Voting Phase on Device2: should be 1 or more times,but let's assume the existence of at least 2 pairs to test all checks *)
@@ -194,7 +194,7 @@ process
  event judge_rejects_voterclaim(HB, C, B);  (*judge rejects voter claim if used the coercers trick and submitted an older receipt2*)
  event judge_falsfies_election(HB, C_from_set, C_final, B);  
  let h_NULL = NULL_value() in
- event judge_rejects_absentvoting_claim(ID,B,ZKP1,h_NULL);
- event judge_accepts_absentvoting_claim(ID,B,ZKP1,h_NULL);
+ event judge_rejects_absentvoting_claim(Identity,B,ZKP1,h_NULL);
+ event judge_accepts_absentvoting_claim(Identity,B,ZKP1,h_NULL);
   0
 )

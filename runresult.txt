@@ -33,7 +33,7 @@ Process 0 (that is, the initial process):
 {17}let ID_1: auth_id = biometric(Identity) in
 {18}let HB: hbid = H(ID_1,r) in
 {19}event voter_receipt1(ID_1,HB,T1,B);
-{20}event add_id_toZKP(ZKP1,ID_1,HB,T1,B,true);
+{20}event add_id_toZKP(ZKP1,Identity,ID_1,HB,T1,B);
 {21}let N_1: count = initiate in
 {22}event voter_receipts2(HB,C,T2,N_1,B);
 {23}event add_vote_toZKP(ZKP2,HB,C,T2,N_1,B);
@@ -66,8 +66,8 @@ Process 0 (that is, the initial process):
     {48}event judge_rejects_voterclaim(HB,C,B);
     {49}event judge_falsfies_election(HB,C_from_set,C_final,B);
     {50}let h_NULL: hbid = NULL_value in
-    {51}event judge_rejects_absentvoting_claim(ID_1,B,ZKP1,h_NULL);
-    {52}event judge_accepts_absentvoting_claim(ID_1,B,ZKP1,h_NULL)
+    {51}event judge_rejects_absentvoting_claim(Identity,B,ZKP1,h_NULL);
+    {52}event judge_accepts_absentvoting_claim(Identity,B,ZKP1,h_NULL)
 )
 
 --  Process 1 (that is, process 0, with let moved downwards):
@@ -90,7 +90,7 @@ Process 0 (that is, the initial process):
 {17}let ID_1: auth_id = biometric(Identity) in
 {18}let HB: hbid = H(ID_1,r) in
 {19}event voter_receipt1(ID_1,HB,T1,B);
-{20}event add_id_toZKP(ZKP1,ID_1,HB,T1,B,true);
+{20}event add_id_toZKP(ZKP1,Identity,ID_1,HB,T1,B);
 {21}let N_1: count = initiate in
 {22}event voter_receipts2(HB,C,T2,N_1,B);
 {23}event add_vote_toZKP(ZKP2,HB,C,T2,N_1,B);
@@ -120,11 +120,11 @@ Process 0 (that is, the initial process):
     {48}event judge_rejects_voterclaim(HB,C,B);
     {49}event judge_falsfies_election(HB,C_from_set,C_final,B);
     {50}let h_NULL: hbid = NULL_value in
-    {51}event judge_rejects_absentvoting_claim(ID_1,B,ZKP1,h_NULL);
-    {52}event judge_accepts_absentvoting_claim(ID_1,B,ZKP1,h_NULL)
+    {51}event judge_rejects_absentvoting_claim(Identity,B,ZKP1,h_NULL);
+    {52}event judge_accepts_absentvoting_claim(Identity,B,ZKP1,h_NULL)
 )
 
--- Axiom event(add_id_toZKP(zk1,ID_2,h,t1,b,true)) ==> h = check_ZKP_inclusion(zk11,ID_2,b) in process 1.
+-- Axiom event(add_id_toZKP(zk1,identity,ID_2,h,t1,b)) ==> ID_2 = biometric(identity) && h = check_ZKP_inclusion(zk11,identity,b) in process 1.
 -- Axiom
    event(add_vote_toZKP(zk3,h,v,t,n,b)) ==> v = check_ZKP3_vote(zk33,h,b)
    event(add_vote_toZKP(zk3,h,v,t,n,b)) ==> n = check_ZKP3_count(zk33,h,b)
@@ -169,16 +169,16 @@ Translating the process into Horn clauses...
 Completing...
 Starting query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(pbb_entry(b,t_PBB,v_PBB,n)) ==> v = v_voter && v_PBB = v && t = t_voter && t_voter = t_PBB
 RESULT event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(pbb_entry(b,t_PBB,v_PBB,n)) ==> v = v_voter && v_PBB = v && t = t_voter && t_voter = t_PBB is true.
--- Query inj-event(judge_rejects_absentvoting_claim(ID_2,b,zk1,h_NULL_1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,ID_2,b) && h ≠ h_NULL_1 in process 1.
+-- Query inj-event(judge_rejects_absentvoting_claim(identity,b,zk1,h_NULL_1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,identity,b) && ID_2 = biometric(identity) && h ≠ h_NULL_1 in process 1.
 Translating the process into Horn clauses...
 Completing...
-Starting query inj-event(judge_rejects_absentvoting_claim(ID_2,b,zk1,h_NULL_1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,ID_2,b) && h ≠ h_NULL_1
-RESULT inj-event(judge_rejects_absentvoting_claim(ID_2,b,zk1,h_NULL_1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,ID_2,b) && h ≠ h_NULL_1 is true.
--- Query event(judge_accepts_absentvoting_claim(ID_2,b,zk1,h_NULL_1)) ==> h_NULL_1 = check_ZKP_inclusion(zk1,ID_2,b) in process 1.
+Starting query inj-event(judge_rejects_absentvoting_claim(identity,b,zk1,h_NULL_1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,identity,b) && ID_2 = biometric(identity) && h ≠ h_NULL_1
+RESULT inj-event(judge_rejects_absentvoting_claim(identity,b,zk1,h_NULL_1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,identity,b) && ID_2 = biometric(identity) && h ≠ h_NULL_1 is true.
+-- Query event(judge_accepts_absentvoting_claim(identity,b,zk1,h_NULL_1)) ==> h_NULL_1 = check_ZKP_inclusion(zk1,identity,b) in process 1.
 Translating the process into Horn clauses...
 Completing...
-Starting query event(judge_accepts_absentvoting_claim(ID_2,b,zk1,h_NULL_1)) ==> h_NULL_1 = check_ZKP_inclusion(zk1,ID_2,b)
-RESULT event(judge_accepts_absentvoting_claim(ID_2,b,zk1,h_NULL_1)) ==> h_NULL_1 = check_ZKP_inclusion(zk1,ID_2,b) is true.
+Starting query event(judge_accepts_absentvoting_claim(identity,b,zk1,h_NULL_1)) ==> h_NULL_1 = check_ZKP_inclusion(zk1,identity,b)
+RESULT event(judge_accepts_absentvoting_claim(identity,b,zk1,h_NULL_1)) ==> h_NULL_1 = check_ZKP_inclusion(zk1,identity,b) is true.
 -- Query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(sealing_receipt(h,fv,t,n,b)) && fv = F(h,v) in process 1.
 Translating the process into Horn clauses...
 Completing...
@@ -197,11 +197,11 @@ Query(ies):
  - Query inj-event(judge_falsfies_election(h,v_PBB,v_voter,b)) ==> inj-event(cast_final(h,v_voter,t_voter,n_voter,b)) && inj-event(ea_receipt(h,fv,t_EA,n_EA,b)) && fv = F(h,v_voter) && n_EA = n_voter && t_EA = t_voter && v_PBB ≠ v_voter is true.
  - Query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(ea_receipt(h,fv,t_EA,n,b)) ==> v = v_voter && fv = F(h,v_voter) && t = t_voter && t_voter = t_EA is true.
  - Query event(judge_accepts(h,v,b)) && event(cast_final(h,v_voter,t_voter,n,b)) && event(pbb_entry(b,t_PBB,v_PBB,n)) ==> v = v_voter && v_PBB = v && t = t_voter && t_voter = t_PBB is true.
- - Query inj-event(judge_rejects_absentvoting_claim(ID_2,b,zk1,h_NULL_1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,ID_2,b) && h ≠ h_NULL_1 is true.
- - Query event(judge_accepts_absentvoting_claim(ID_2,b,zk1,h_NULL_1)) ==> h_NULL_1 = check_ZKP_inclusion(zk1,ID_2,b) is true.
+ - Query inj-event(judge_rejects_absentvoting_claim(identity,b,zk1,h_NULL_1)) ==> inj-event(ea_receipt(h,fv,t,n,b)) && h = check_ZKP_inclusion(zk1,identity,b) && ID_2 = biometric(identity) && h ≠ h_NULL_1 is true.
+ - Query event(judge_accepts_absentvoting_claim(identity,b,zk1,h_NULL_1)) ==> h_NULL_1 = check_ZKP_inclusion(zk1,identity,b) is true.
  - Query inj-event(ea_receipt(h,fv,t,n,b)) ==> inj-event(cast_final(h,v,t,n,b)) && inj-event(sealing_receipt(h,fv,t,n,b)) && fv = F(h,v) is true.
 Associated axiom(s):
- - Axiom event(add_id_toZKP(zk1,ID_2,h,t1,b,true)) ==> h = check_ZKP_inclusion(zk11,ID_2,b) in process 1.
+ - Axiom event(add_id_toZKP(zk1,identity,ID_2,h,t1,b)) ==> ID_2 = biometric(identity) && h = check_ZKP_inclusion(zk11,identity,b) in process 1.
  - Axiom
    event(add_vote_toZKP(zk3,h,v,t,n,b)) ==> v = check_ZKP3_vote(zk33,h,b)
    event(add_vote_toZKP(zk3,h,v,t,n,b)) ==> n = check_ZKP3_count(zk33,h,b)
