@@ -1,4 +1,4 @@
-This folder contains files needed for Africa Crypt 2026 Submitted manuscripts (by the same author but anonymized), mainly:
+This folder contains files needed for anonymous manuscripts (by the same author but anonymized), mainly:
 
 1- All cited posters with author name removed
 
